@@ -25,6 +25,7 @@ Notes:
   - No root required. Writes only to user directories.
   - GNOME-based desktops are the primary target, but .desktop is freedesktop-compliant.
   - Sets the desktop entry working directory (Path=) to ~/Applications for more reliable launches.
+  - Launchers now auto-fallback to --no-sandbox if the first launch fails (helps on Ubuntu 24.04).
 USAGE
 }
 
@@ -248,19 +249,39 @@ main() {
     fi
   fi
 
-  # Desktop entry
-  local desktop_file="$desktop_dir/${app_slug}.desktop"
-  if [ -e "$desktop_file" ] && [ "$force_overwrite" = false ]; then
-    die "Desktop entry exists: $desktop_file (use --force to overwrite)"
-  fi
+  # Create a tiny wrapper so desktop launchers can retry with --no-sandbox if needed
+  local bin_dir="$HOME/.local/bin"
+  mkdir -p "$bin_dir"
+  local wrapper_path="$bin_dir/${app_slug}-appimage-launcher"
+  log "Writing launcher wrapper: $wrapper_path"
+  cat >"$wrapper_path" <<'WRAP'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+app="$APPIMAGE_PATH_PLACEHOLDER"
+extra_args="$EXEC_ARGS_PLACEHOLDER"
 
-  # For Exec= use quoted AppImage path + optional args + %U; avoid quoting %U
-  local exec_line
-  if [ -n "$exec_args" ]; then
-    exec_line="\"$dest_appimage\" $exec_args %U"
-  else
-    exec_line="\"$dest_appimage\" %U"
+# If libfuse2 is missing, prefer extract-and-run to avoid mount issues
+if command -v ldconfig >/dev/null 2>&1; then
+  if ! ldconfig -p 2>/dev/null | grep -q 'libfuse\.so\.2'; then
+    export APPIMAGE_EXTRACT_AND_RUN=1
   fi
+fi
+
+# Try normal launch first
+if "$app" $extra_args "$@"; then
+  exit 0
+fi
+
+# Fallback commonly needed for Electron-based AppImages on some Ubuntu configs
+exec "$app" --no-sandbox $extra_args "$@"
+WRAP
+  sed -i "s|$APPIMAGE_PATH_PLACEHOLDER|$dest_appimage|g" "$wrapper_path"
+  sed -i "s|$EXEC_ARGS_PLACEHOLDER|$exec_args|g" "$wrapper_path"
+  chmod +x "$wrapper_path"
+
+  # Use wrapper to handle fallbacks and pass through desktop arguments
+  local exec_line
+  exec_line="\"$wrapper_path\" %U"
 
   # Icon can be a name (no ext) if placed into icons theme; if a file path, keep absolute
   local icon_field
