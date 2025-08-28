@@ -289,8 +289,7 @@ DESKTOP
   log "Installed AppImage: $dest_appimage"
   log "Desktop entry created: $desktop_file"
   log "Icon installed: $icon_target"
-  printf '\nDone. You may need to refresh your desktop's app index or log out/in.\n'
+  printf "\nDone. You may need to refresh your desktop's app index or log out/in.\n"
 }
 
 main "$@"
-
