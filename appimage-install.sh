@@ -257,8 +257,8 @@ main() {
   cat >"$wrapper_path" <<'WRAP'
 #!/usr/bin/env bash
 set -Eeuo pipefail
-app="$APPIMAGE_PATH_PLACEHOLDER"
-extra_args="$EXEC_ARGS_PLACEHOLDER"
+app="__APPIMAGE_PATH__"
+extra_args="__EXEC_ARGS__"
 
 # If libfuse2 is missing, prefer extract-and-run to avoid mount issues
 if command -v ldconfig >/dev/null 2>&1; then
@@ -275,8 +275,11 @@ fi
 # Fallback commonly needed for Electron-based AppImages on some Ubuntu configs
 exec "$app" --no-sandbox $extra_args "$@"
 WRAP
-  sed -i "s|$APPIMAGE_PATH_PLACEHOLDER|$dest_appimage|g" "$wrapper_path"
-  sed -i "s|$EXEC_ARGS_PLACEHOLDER|$exec_args|g" "$wrapper_path"
+  # Safely substitute placeholders without referencing unset variables under set -u
+  local exec_args_sed
+  exec_args_sed=${exec_args//&/\\&}
+  sed -i "s|__APPIMAGE_PATH__|$dest_appimage|g" "$wrapper_path"
+  sed -i "s|__EXEC_ARGS__|$exec_args_sed|g" "$wrapper_path"
   chmod +x "$wrapper_path"
 
   # Use wrapper to handle fallbacks and pass through desktop arguments
@@ -292,6 +295,7 @@ WRAP
       icon_field="$icon_target" ;;
   esac
 
+  local desktop_file="$desktop_dir/${app_slug}.desktop"
   log "Writing desktop entry: $desktop_file"
   cat >"$desktop_file" <<DESKTOP
 [Desktop Entry]
