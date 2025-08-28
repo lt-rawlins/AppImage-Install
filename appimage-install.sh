@@ -71,7 +71,7 @@ try_extract_icon_from_appimage() {
   local tmp
   tmp=$(mktemp -d)
   local cleanup
-  cleanup() { rm -rf "$tmp" || true; }
+  cleanup() { [ -n "${tmp-}" ] && rm -rf "$tmp" || true; }
   trap cleanup RETURN
 
   # AppImage self-extractor writes into squashfs-root
