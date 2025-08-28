@@ -24,6 +24,7 @@ Options:
 Notes:
   - No root required. Writes only to user directories.
   - GNOME-based desktops are the primary target, but .desktop is freedesktop-compliant.
+  - Sets the desktop entry working directory (Path=) to ~/Applications for more reliable launches.
 USAGE
 }
 
@@ -276,6 +277,7 @@ main() {
 Type=Application
 Name=$app_name
 Exec=$exec_line
+Path=$install_dir
 Icon=$icon_field
 Terminal=false
 Categories=$categories
