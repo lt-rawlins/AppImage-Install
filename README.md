@@ -64,6 +64,31 @@ Troubleshooting
   - Some sandboxed apps require additional flags; use `--exec-args "--no-sandbox"` as needed.
   - Confirm the AppImage has execute permissions.
 
+Ubuntu 24.04 and Sandboxing
+---------------------------
+
+On Ubuntu 24.04 and newer, some Electron/Chromium-based AppImages (such as Obsidian, Brave, etc.) may fail to launch from the application menu even though they run fine when executed directly from the file manager.
+
+### Why this happens
+These apps use Chromium’s sandbox for process isolation. On many Ubuntu setups the SUID sandbox helper is not available, causing the app to fail silently when launched via a desktop entry.
+
+### Script behavior
+The generated launcher now attempts to run the AppImage normally first. If that fails, it automatically retries with `--no-sandbox` so the application can still be launched from the menu.
+
+### Important Warning
+Running with `--no-sandbox` disables Chromium’s sandbox process isolation and therefore reduces security. I leave it up to you as to whether or not this is acceptable.
+
+### Recommended steps
+- Install `libfuse2t64` if AppImages fail to run at all:
+  ```bash
+  sudo apt install libfuse2t64
+  ```
+- Rely on the launcher’s automatic fallback to `--no-sandbox` when needed.
+- To always disable the sandbox explicitly, you can install with:
+  ```bash
+  ./appimage-install.sh --name AppName --exec-args "--no-sandbox" /path/to/AppImage
+  ```
+
 Testing
 - Positive path:
   - Run: `./appimage-install.sh ~/Downloads/My.AppImage`
@@ -87,4 +112,3 @@ Supported Environments
 
 License
 - See `LICENSE`.
-
