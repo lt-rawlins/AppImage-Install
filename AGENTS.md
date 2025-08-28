@@ -1,37 +1,40 @@
-# Repository Guidelines
+Agent Guide
+===========
 
-## Project Structure & Module Organization
-- `appimage-install.sh`: Main Bash script to install an AppImage into `~/Applications`, create a `.desktop` entry in `~/.local/share/applications/`, and copy the icon to `~/.local/share/icons/`.
-- `README.md`: Usage notes and supported environments (GNOME-based distros).
-- `LICENSE`: Project license.
+This repository uses a simple Bash script to integrate AppImages into a user’s desktop environment. When contributing as an AI coding agent or automation, follow the practices below to keep the project consistent, safe, and easy to review.
 
-## Build, Test, and Development Commands
-- Run locally: `./appimage-install.sh ~/Downloads/My.AppImage`
-  - Installs the AppImage and registers launcher + icon.
-- Lint (recommended): `shellcheck appimage-install.sh`
-  - Static analysis for Bash pitfalls.
-- Format (recommended): `shfmt -w appimage-install.sh`
-  - Consistent shell formatting.
+Scope & Goals
+- Primary artifact: `appimage-install.sh` (Bash, no root).
+- Purpose: Copy AppImage to `~/Applications`, create `.desktop` in `~/.local/share/applications/`, and install icon in `~/.local/share/icons/`.
+- Target: GNOME-based distros (freedesktop-compliant launchers).
 
-## Coding Style & Naming Conventions
-- Shell: Bash (`#!/usr/bin/env bash`). Start scripts with `set -Eeuo pipefail`.
+Coding Standards
+- Shell: Bash with `#!/usr/bin/env bash` and `set -Eeuo pipefail`.
 - Indentation: 2 spaces; no tabs.
-- Quoting: Always quote variable expansions and paths (e.g., `"$name"`).
-- Naming: Lowercase, hyphen-separated script names; descriptive variable names (e.g., `app_name`, `desk_dir`).
-- Utilities: Prefer `mktemp -d` for staging over hardcoded temp paths; avoid `ls | grep` anti-patterns; use `find`/globbing safely.
+- Quoting: Always quote variables and paths (`"$var"`).
+- Utilities: Prefer `mktemp -d` for temp dirs; avoid `ls | grep`; prefer `find`/globbing.
+- Names: Descriptive, lowercase with hyphens for scripts; e.g., `app_name`, `desktop_dir`.
+- Safety: Validate inputs; handle spaces; offer `--force` for overwrites; clear errors.
 
-## Testing Guidelines
-- Manual verification on GNOME (e.g., Pop!_OS, Fedora):
-  - Run with a known AppImage; ensure executable exists in `~/Applications/`.
-  - Check `.desktop` in `~/.local/share/applications/` references the installed path.
-  - Confirm icon appears in `~/.local/share/icons/` and the launcher shows in the app menu.
-- Negative tests: Pass a missing path and confirm a clear error message and non-zero exit.
+Dev Workflow
+- Lint: `shellcheck appimage-install.sh`
+- Format: `shfmt -w appimage-install.sh`
+- Manual testing on GNOME:
+  - Install a known AppImage; verify presence in `~/Applications/`.
+  - Check `.desktop` references the installed path.
+  - Confirm icon in `~/.local/share/icons/` and launcher visible in the app grid.
+- Negative tests: Use an invalid/missing path; ensure non-zero exit and readable error.
 
-## Commit & Pull Request Guidelines
-- Commits: Use Conventional Commits where possible (e.g., `feat:`, `fix:`, `docs:`). Keep changes focused.
-- PRs: Include a brief description, tested OS/DE, and before/after behavior. Add screenshots of the app menu entry when UI changes apply.
-- CI (future): If added, include `shellcheck` and `shfmt` checks.
+Change Guidelines
+- Keep changes focused and minimal; avoid unrelated refactors.
+- Prefer small, composable helpers over complex monolith functions.
+- When adding options, update README with usage and examples.
 
-## Security & Configuration Tips
-- No root required; writes to user directories only. Do not run untrusted AppImages.
-- Validate inputs and handle spaces in paths. Prefer defensive checks and clear error messages.
+PR & Commit Conventions
+- Conventional Commits preferred (e.g., `feat:`, `fix:`, `docs:`).
+- Describe tested OS/DE and before/after behavior; include screenshots if UI-visible.
+
+Security
+- Never escalate privileges; do not write outside user directories.
+- Do not download or execute untrusted binaries during tests.
+
